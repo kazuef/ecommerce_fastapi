@@ -5,6 +5,7 @@ from dotenv import dotenv_values
 from models import User
 from fastapi import status
 
+
 config_credential = dotenv_values(".env")
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -24,3 +25,35 @@ async def very_token(token: str):
         )
     
     return user
+
+
+async def verify_password(plain_password, hashed_password) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+async def authenticate_user(username, password):
+    user = await User.get(username = username)
+
+    result_verify_password = await verify_password(password, user.password)
+
+    if user and result_verify_password:
+        return user
+    return False
+
+async def token_generator(username: str, password: str):
+    user = await authenticate_user(username, password)
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    token_data = {
+        "id": user.id,
+        "username": user.username
+    }
+
+    token = jwt.encode(token_data, config_credential["SECRET"], algorithm='HS256')
+
+    return token

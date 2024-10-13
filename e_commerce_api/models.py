@@ -51,3 +51,13 @@ class UserPydanticIn(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserPydanticOut(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+    is_verified: bool
+    join_date: datetime
+
+    class Config:
+        from_attributes = True
